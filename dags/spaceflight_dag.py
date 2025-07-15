@@ -1,22 +1,85 @@
-
 from __future__ import annotations
 
 import pendulum
-
 from airflow.models.dag import DAG
 from airflow.operators.python import PythonOperator
-
+from airflow.models import Variable
 import requests
 import json
 
 
+def extract_spaceflight_data(ti):
+    # Get the current offset from Airflow Variable (default to 0)
+    offset = int(Variable.get("spaceflight_api_offset", default_var=0))
 
-def extract_spaceflight_data():
-    response = requests.get('https://api.spaceflightnewsapi.net/v4/articles')
-    data = json.loads(response.content)
-    with open('spaceflight_data.json', 'w') as f:
-        json.dump(data, f)
+    # Build URL dynamically based on offset
+    base_url = "https://api.spaceflightnewsapi.net/v4/articles"
+    if offset == 0:
+        url = base_url  # Case base: no offset param
+    else:
+        url = f"{base_url}/?offset={offset}"  # Subsequent triggers with offset
 
+    print(f"Fetching data from URL: {url}")
+
+    # Make API request
+    response = requests.get(url)
+    data = response.json()
+
+    # Push raw API data to XCom
+    ti.xcom_push(key='raw_spaceflight_data', value=data)
+
+    # Check if there are results to avoid incrementing offset unnecessarily
+    if data.get('results'):
+        next_offset = offset + 10
+        Variable.set("spaceflight_api_offset", next_offset)
+        print(f"Next offset set to: {next_offset}")
+    else:
+        print("No more results returned from API. Offset will not be incremented.")
+
+
+def transform_spaceflight_data(ti):
+    # Pull raw data from XCom
+    raw_data = ti.xcom_pull(task_ids='extract', key='raw_spaceflight_data')
+
+    transformed_data = []
+    for item in raw_data.get('results', []):  # Safely access 'results'
+        transformed_item = {
+            'id': item.get('id'),
+            'title': item.get('title'),
+            'url': item.get('url'),
+            'image_url': item.get('image_url'),
+            'news_site': item.get('news_site'),
+            'summary': item.get('summary'),
+            'published_at': item.get('published_at'),
+            'updated_at': item.get('updated_at')
+        }
+        transformed_data.append(transformed_item)
+
+    # Push transformed data to XCom
+    ti.xcom_push(key='transformed_spaceflight_data', value=transformed_data)
+
+
+def load_spaceflight_data(ti):
+    from pymongo import MongoClient
+
+    # MongoDB connection URI
+    mongo_uri = "mongodb://root:example@mongo:27017/admin"
+    client = MongoClient(mongo_uri)
+    db = client.big_data_project
+    collection = db.spaceflight_news
+
+    # Pull transformed data from XCom
+    transformed_data = ti.xcom_pull(task_ids='transform', key='transformed_spaceflight_data')
+
+    if transformed_data:
+        # Insert data into MongoDB
+        collection.insert_many(transformed_data)
+        print(f"Inserted {len(transformed_data)} documents into MongoDB.")
+    else:
+        print("No transformed data to insert into MongoDB.")
+
+
+# Define DAG
 with DAG(
     dag_id="spaceflight_data_pipeline",
     schedule=None,
@@ -24,72 +87,24 @@ with DAG(
     catchup=False,
     tags=["spaceflight", "api"],
 ) as dag:
+
+    # Task: Extract data from API
     extract_task = PythonOperator(
         task_id="extract",
         python_callable=extract_spaceflight_data,
     )
 
-    def transform_spaceflight_data():
-        with open('spaceflight_data.json', 'r') as f:
-            data = json.load(f)
-        
-        transformed_data = []
-        for item in data['results']:
-            transformed_item = {
-                'id': item.get('id'),
-                'title': item.get('title'),
-                'url': item.get('url'),
-                'image_url': item.get('image_url'),
-                'news_site': item.get('news_site'),
-                'summary': item.get('summary'),
-                'published_at': item.get('published_at'),
-                'updated_at': item.get('updated_at'),
-                'featured': item.get('featured'),
-                'launches': item.get('launches'),
-                'events': item.get('events')
-            }
-            transformed_data.append(transformed_item)
-
-        with open('spaceflight_data_transformed.json', 'w') as f:
-            json.dump(transformed_data, f)
-
+    # Task: Transform raw API data
     transform_task = PythonOperator(
         task_id="transform",
         python_callable=transform_spaceflight_data,
     )
 
-    def load_spaceflight_data():
-        from pymongo import MongoClient
-        import os
-        from urllib.parse import quote_plus
-
-        mongo_user = "root"
-        mongo_pass = "example"
-        mongo_host = "mongo"
-        mongo_port = "27017"
-
-        print("Mongo user:", mongo_user)
-        print("Mongo pass:", mongo_pass)
-        print("Mongo host:", mongo_host)
-        print("Mongo port:", mongo_port)
-
-
-        mongo_uri = f"mongodb://{mongo_user}:{mongo_pass}@{mongo_host}:{mongo_port}/admin"
-        print(mongo_uri)
-        client = MongoClient(mongo_uri)
-
-
-        db = client.big_data_project
-        collection = db.spaceflight_news
-        print(db)
-        print(collection)
-        with open('spaceflight_data_transformed.json', 'r') as f:
-            data = json.load(f)
-        collection.insert_many(data)
-
+    # Task: Load transformed data into MongoDB
     load_task = PythonOperator(
         task_id="load",
         python_callable=load_spaceflight_data,
     )
 
+    # Define task dependencies
     extract_task >> transform_task >> load_task
