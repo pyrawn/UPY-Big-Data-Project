@@ -1,3 +1,9 @@
 streamlit
 pymongo
 pandas
+wordcloud
+matplotlib
+Pillow
+requests
+plotly
+tabulate
