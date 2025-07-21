@@ -72,6 +72,9 @@ The Streamlit application is organized into multiple sections:
 - Displays project overview and purpose.
 - Explains how the dashboards reflect different aspects of global societal data.
 
+<img width="606" height="372" alt="image" src="https://github.com/user-attachments/assets/bcf62939-3886-4d5f-a783-21f0f0fa816b" />
+
+
 ---
 
 ### 📊 Dashboards
@@ -85,6 +88,9 @@ The Streamlit application is organized into multiple sections:
   - Overview of wanted individuals.
   - Filters for crime type, status (captured / uncaptured), and years.
   - Interactive components to explore profiles.
+ 
+<img width="818" height="779" alt="image" src="https://github.com/user-attachments/assets/daaf2be6-4ad8-4aa0-afad-dc2bb03a5592" />
+
 
 ---
 
@@ -97,6 +103,9 @@ The Streamlit application is organized into multiple sections:
   - Job availability by country and sector.
   - Filters for job type (remote/on-site), industry, and location.
   - Insights into global hiring patterns.
+ 
+<img width="755" height="835" alt="image" src="https://github.com/user-attachments/assets/a8e4dbc5-2ff2-46a4-b9dc-d1d5737421e8" />
+
 
 ---
 
@@ -109,6 +118,8 @@ The Streamlit application is organized into multiple sections:
   - Timeline of recent articles.
   - Filters for space agencies and date ranges.
   - Overview of space exploration trends.
+
+<img width="729" height="757" alt="image" src="https://github.com/user-attachments/assets/722d9206-3428-4132-8adc-416d79ffc44b" />
 
 ---
 
@@ -131,16 +142,25 @@ The ETL process is managed through Airflow. The project includes both individual
 
 - **Individual DAGs:**
     - `fbi_dag.py`: Extracts, transforms, and loads data from the FBI Wanted API.
+      <img width="718" height="137" alt="image" src="https://github.com/user-attachments/assets/4e9873ce-cc30-42e2-a2c4-bfb240cd3ad6" />
+
     - `arbeitnow_dag.py`: Extracts, transforms, and loads data from the ArbeitNow Job Board API.
+      <img width="716" height="157" alt="image" src="https://github.com/user-attachments/assets/6720700e-15fa-4c5f-959a-c8b9fb361cfc" />
+
     - `spaceflight_dag.py`: Extracts, transforms, and loads data from the Spaceflight News API.
+      <img width="722" height="124" alt="image" src="https://github.com/user-attachments/assets/21839e01-9eec-46b8-b537-ece7ed0b485e" />
+
 - **Unified DAG:**
     - `pipeline_dag.py`: A unified DAG that orchestrates the entire ETL pipeline, running the extraction, transformation, and loading tasks for all three APIs in a coordinated manner.
+    <img width="751" height="326" alt="image" src="https://github.com/user-attachments/assets/ba841dff-4e19-4eb0-9bc6-24df9e1f248d" />
 
 ### 🔄 Workflow
 
 1. **Extract:** Pulls raw JSON data from APIs.
 2. **Transform:** Cleans and structures data for analysis.
 3. **Load:** Inserts transformed data into MongoDB collections.
+
+<img width="1897" height="744" alt="image" src="https://github.com/user-attachments/assets/84c8c2c7-1cd2-488a-9bc7-ab525c5752d8" />
 
 ---
 
@@ -159,6 +179,9 @@ The MongoDB Data Warehouse consists of three collections:
 | `space_news` | Spaceflight News API    |
 
 Each collection contains cleaned JSON documents ready for visualization.
+
+<img width="1355" height="611" alt="image" src="https://github.com/user-attachments/assets/61825cfc-02e4-417a-8e88-3f53276f0a9f" />
+
 
 ### PostgreSQL
 
