@@ -210,11 +210,14 @@ The entire stack is containerized with Docker:
 git clone <repo_url>
 cd UPY-Big-Data-Project
 ```
-2. Docker initialization 
+2. Docker initialization
+```bash
+docker-compose run --rm webserver airflow db init
+``` 
 Ensure you have Docker Desktop installed and running.
 If you are in MacOs/Linux:
 ```bash
-docker-compose run --rm webserver airflow users create \
+docker compose run --rm webserver airflow users create \
     --username airflow \
     --firstname Admin \
     --lastname User \
