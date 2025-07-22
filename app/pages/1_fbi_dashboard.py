@@ -72,7 +72,7 @@ else:
 
 st.header("👤 Wanted Profiles")
 if len(df) > 0:
-    current_index = st.number_input("Browse profiles", min_value=0, max_value=len(df) - 1, value=0, step=1)
+    current_index = st.number_input("Browse profiles", min_value=0, max_value=1000, value=0, step=1)
     selected_profile = df.iloc[current_index]
 
     # Get image URL directly
